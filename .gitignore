@@ -25,3 +25,4 @@ dist-ssr
 
 .opencode/
 qdrant_storage/
+.cache

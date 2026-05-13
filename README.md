@@ -1,30 +1,49 @@
-# Memory MCP Server
+# Memory MCP Server (May 2026 Edition)
 
-A Bun-based Model Context Protocol (MCP) server for shared AI agent memory management.
+A high-performance Bun-based Model Context Protocol (MCP) server for shared AI agent memory management, optimized for modern hardware and semantic reasoning.
 
 ## Features
-- **Shared Memory**: All connected agents share the same vector space.
-- **Local Embeddings**: Uses `Transformers.js` (`all-MiniLM-L6-v2`) for local vector generation.
+- **Shared Memory**: All connected agents share the same high-dimensional vector space.
+- **Hardware-Aware Embeddings**: Automatically selects the best embedding model based on your system's RAM and CPU (supports 2026 SOTA models).
+- **Automatic Re-indexing**: Gracefully handles hardware upgrades by automatically re-embedding your data when switching tiers.
+- **Local Vector Generation**: Uses `@huggingface/transformers` for privacy-first local embeddings.
 - **Vector Storage**: Integrates with Qdrant for persistence and similarity search.
 
 ## Prerequisites
-- [Bun](https://bun.sh/)
+- [Bun](https://bun.sh/) (Recommended for ~4x faster inference)
 - [Qdrant](https://qdrant.tech/) (running locally, e.g., via Docker)
 
 ### Run Qdrant
-You can run Qdrant using Docker directly:
-```bash
-docker run -p 6333:6333 qdrant/qdrant
-```
-Or use the provided `docker-compose.yml`:
 ```bash
 docker compose up -d
 ```
 
+## Hardware Tiers
+The server automatically detects your hardware and selects a specialized model:
+
+| Tier | Model | Dimensions | Target Hardware |
+| :--- | :--- | :--- | :--- |
+| **Performance** | `Xenova/bge-m3` | 1024 | 16GB+ RAM, 8+ Cores (8k context support) |
+| **Balanced** | `nomic-embed-text-v1.5` | 768 | 8GB+ RAM, 4+ Cores (Matryoshka support) |
+| **Lightweight** | `snowflake-arctic-embed-xs` | 384 | Mobile / Low-resource environments |
+
+## Automatic Re-indexing
+If you upgrade your hardware (e.g., add more RAM), the MCP will detect the change on the next startup. To maintain consistency, it will:
+1.  **Detect** the dimension mismatch.
+2.  **Backup** your existing memory raw content.
+3.  **Re-create** the collection with the new tier's dimensions.
+4.  **Re-index** all memories automatically using the new model.
+
 ## Configuration
-The server can be configured via environment variables:
+- `MEMORY_HARDWARE_TIER`: Override auto-detection (`lightweight`, `balanced`, `performance`).
 - `QDRANT_URL`: URL of the Qdrant server (default: `http://127.0.0.1:6333`)
-- `QDRANT_COLLECTION`: Name of the collection to use (default: `agent_memory`)
+- `QDRANT_COLLECTION`: Name of the collection (default: `agent_memory`)
+
+## Benchmarking
+Run the built-in benchmark to see how each tier performs on your machine:
+```bash
+bun run benchmark
+```
 
 ## Setup & Installation
 ```bash
