@@ -53,6 +53,21 @@ export class QdrantService {
       with_payload: true,
     });
   }
+
+  async retrieve(id: string) {
+    const results = await this.client.retrieve(COLLECTION_NAME, {
+      ids: [id],
+      with_payload: true,
+    });
+    return results.length > 0 ? results[0] : null;
+  }
+
+  async retrieveBatch(ids: string[]) {
+    return await this.client.retrieve(COLLECTION_NAME, {
+      ids,
+      with_payload: true,
+    });
+  }
 }
 
 export const qdrantService = new QdrantService();

@@ -4,7 +4,13 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { toolDefinitions, handleStoreMemory, handleSearchMemory } from './mcp/tools';
+import {
+  toolDefinitions,
+  handleStoreMemory,
+  handleSearchMemory,
+  handleRetrieveMemory,
+  handleRetrieveMemories
+} from './mcp/tools';
 import { embeddingService } from './embeddings/transformer';
 import { qdrantService } from './db/qdrant';
 
@@ -47,6 +53,10 @@ async function main() {
         return await handleStoreMemory(args);
       } else if (name === 'search_memory') {
         return await handleSearchMemory(args);
+      } else if (name === 'retrieve_memory') {
+        return await handleRetrieveMemory(args);
+      } else if (name === 'retrieve_memories') {
+        return await handleRetrieveMemories(args);
       } else {
         throw new Error(`Tool not found: ${name}`);
       }

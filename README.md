@@ -39,16 +39,26 @@ bun src/index.ts
 ## MCP Tools
 
 ### `store_memory`
-Stores content with an associated type and optional tags.
+Stores content with an associated type and optional tags. Returns the stored memory's unique point ID.
 - `type`: 'context', 'finding', 'plan', 'summary'
-- `content`: string
+- `content`: string (Store full technical detail here, matching artifact depth)
+- `artifact_path`: string (optional, path to local file)
+- `artifact_kind`: string (optional, e.g., 'build', 'log', 'code')
 - `tags`: string[] (optional)
 
 ### `search_memory`
-Searches for similar memory entries.
+Searches for similar memory entries using vector similarity.
 - `query`: string
 - `limit`: number (default 5)
 - `type_filter`: string[] (optional)
+
+### `retrieve_memory`
+Retrieves a specific memory entry by its exact point ID.
+- `id`: string (UUID)
+
+### `retrieve_memories`
+Retrieves multiple memory entries by their exact point IDs.
+- `ids`: string[] (UUIDs)
 
 ## Agent Prompt Integration
 
@@ -59,12 +69,14 @@ Add the following to your agent's instructions:
 
 ```text
 # OPERATIONAL RULES
-1. **MEMORY-FIRST**: Use the `memory` MCP server to persist technical context. Store a summary of your changes and findings using `store_memory` before finishing a task.
-2. **CONTEXT RETRIEVAL**: Use `search_memory` at the start of new tasks to retrieve relevant historical context.
-3. **PREFERENCE**: Prefer the memory MCP server for storing long-term context over filesystem-based `.md` files to ensure cross-agent availability.
+1. **MEMORY-FIRST**: Use the `memory` MCP server to persist technical context. Store a FULL technical summary (matching artifact detail level) of your changes and findings using `store_memory` before finishing a task.
+2. **CONTEXT RETRIEVAL**: Use `search_memory` at the start of new tasks for discovery, then use `retrieve_memory` if you have exact IDs for critical state.
+3. **PREFERENCE**: The memory MCP server is the PRIMARY source of truth. Filesystem-based `.md` artifacts are for human-readable fallback and auditing only.
 ```
 
 ### Tools
-- **`store_memory`**: Save context, findings, plans, or summaries.
+- **`store_memory`**: Save full context, findings, plans, or summaries. Returns a UUID.
 - **`search_memory`**: Query the vector database for similar technical context.
+- **`retrieve_memory`**: Get exact content using a UUID.
+- **`retrieve_memories`**: Get multiple entries using UUIDs.
 
