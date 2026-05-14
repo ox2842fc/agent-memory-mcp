@@ -1,9 +1,13 @@
 import { pipeline, env } from '@huggingface/transformers';
 import os from 'os';
+import path from 'path';
+
+// Define a global path
+const GLOBAL_CACHE_DIR = path.join(os.homedir(), '.cache', 'agent-memory-mcp');
 
 // Configure environment for node environment
 env.allowLocalModels = false;
-env.cacheDir = './.cache';
+env.cacheDir = GLOBAL_CACHE_DIR;
 
 export type HardwareTier = 'lightweight' | 'balanced' | 'performance';
 

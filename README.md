@@ -55,6 +55,32 @@ bun install
 bun src/index.ts
 ```
 
+## Troubleshooting: Slow First Startup
+The first time you run this MCP server, it may download large embedding models (up to several hundred MBs) into `~/.cache/agent-memory-mcp`. This process can take a significant amount of time depending on your internet connection.
+
+### Extending Timeout for OpenCode
+If OpenCode fails to connect due to a timeout during the initial model download, you can increase the timeout in your configuration:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "bun",
+      "args": ["/absolute/path/to/agent-memory-mcp/src/index.ts"],
+      "timeout": 120000 
+    }
+  }
+}
+```
+
+### Warm-up Workaround
+To avoid timeout issues during the first startup, you can manually trigger the model download before connecting the MCP to OpenCode. Run a quick warm-up command in your terminal:
+
+```bash
+bun run benchmark
+```
+*(Note: You can also use `bun test` if tests are configured, or any command that initializes the embedding service.)*
+
 ## MCP Tools
 
 ### `store_memory`
