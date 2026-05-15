@@ -98,30 +98,52 @@ Searches for similar memory entries using vector similarity.
 - `type_filter`: string[] (optional)
 
 ### `retrieve_memory`
-Retrieves a specific memory entry by its exact point ID.
+Retrieves a specific memory entry by its exact point ID. Returns an error if the ID is not found.
 - `id`: string (UUID)
 
 ### `retrieve_memories`
 Retrieves multiple memory entries by their exact point IDs.
 - `ids`: string[] (UUIDs)
 
-## Agent Prompt Integration
+## Agent Integration Guide
 
-To make your agent aware of the Memory MCP, add instructions to your system prompt or OpenCode prompt files (`.opencode/prompts/`).
+### Memory Architecture
+This MCP uses a **flat memory model**. Each memory has a unique UUID, a type, content, and optional tags.
+- **No native relation graph**: There is no built-in parent/child or dependency tracking.
+- **ID Chaining**: Relation-graphs must be simulated by agents manually embedding prior memory IDs in their content or specific fields (e.g., `HISTORICAL MEMORY IDs`).
+- **Tagging**: Tags are stored and returned but **not filterable** via `search_memory`. Use them for human-readable metadata only.
 
-### Suggested Instructions
-Add the following to your agent's instructions:
+### MEMORY-FIRST Rule (Canonical)
+> **search_memory or retrieve_memory BEFORE acting. store_memory BEFORE reporting.**
 
-```text
-# OPERATIONAL RULES
-1. **MEMORY-FIRST**: Use the `memory` MCP server to persist technical context. Store a FULL technical summary (matching artifact detail level) of your changes and findings using `store_memory` before finishing a task.
-2. **CONTEXT RETRIEVAL**: Use `search_memory` at the start of new tasks for discovery, then use `retrieve_memory` if you have exact IDs for critical state.
-3. **PREFERENCE**: The memory MCP server is the PRIMARY source of truth. Filesystem-based `.md` artifacts are for human-readable fallback and auditing only.
+1.  **RETRIEVE FIRST**: At task start, call `search_memory` (using `type_filter`) or `retrieve_memory` (if IDs were provided by the caller).
+2.  **STORE BEFORE REPORTING**: Before emitting your final response, call `store_memory`. Capture the returned UUID and include it in your output.
+3.  **ZERO-RESULTS FALLBACK**: If `search_memory` returns `[]`, proceed with available context, note the absence in your `OPEN_ITEMS`, and do not block execution.
+
+### Retrieval Strategy by Phase
+Use `type_filter` to minimize noise during discovery and execution:
+
+| Phase | `type_filter` Recommendation |
+| :--- | :--- |
+| **Discovery** | `['finding', 'context']` |
+| **Planning** | `['finding', 'plan']` |
+| **Execution** | `['plan', 'summary']` |
+| **Completion** | `['summary', 'plan']` |
+
+### Storage Convention
+Required tags at minimum: `[agent-role, phase-name]` (e.g., `["explore", "discovery"]`).
+
+### Worked Example
+```json
+// 1. Search for context
+search_memory({ "query": "auth module implementation", "type_filter": ["finding"] })
+
+// 2. Store your progress
+store_memory({
+  "type": "finding",
+  "content": "SUMMARY: Analyzed auth logic.\nFINDINGS: Found bypass in line 42.\nHISTORICAL MEMORY IDs: <prior-id>",
+  "tags": ["explore", "discovery", "auth"]
+})
+// Returns: { "id": "uuid-123-..." }
 ```
-
-### Tools
-- **`store_memory`**: Save full context, findings, plans, or summaries. Returns a UUID.
-- **`search_memory`**: Query the vector database for similar technical context.
-- **`retrieve_memory`**: Get exact content using a UUID.
-- **`retrieve_memories`**: Get multiple entries using UUIDs.
 
